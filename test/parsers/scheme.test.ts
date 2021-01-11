@@ -91,6 +91,12 @@ describe("scheme parser", () => {
                 const res = p.parse("(+ 1 1)")
                 expect(res).toEqual(2)
             })
+
+            it("parses (- 1 1)", () => {
+                const p = new SchemeParser()
+                const res = p.parse("(- 1 1)")
+                expect(res).toEqual(0)
+            })
         })
     })
 })

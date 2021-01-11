@@ -43,8 +43,11 @@ export const readToEnd = (input: string, i: number, tokenType: TokenType) => {
     return token
 }
 
+const add = (...args: number[]) => args.map(arg => Number(arg)).reduce((prev, next) => prev + next, 0)
+
 const Functions = new Map<string, Function>([
-    ['+', (...args: number[]) => args.map(arg => Number(arg)).reduce((prev, next) => prev + next, 0)]
+    ['+', add],
+    ['-', (...args: number[]) => add(...args.map((arg, index) => index === 0 ? arg : -arg))]
 ])
 
 const onlyALiteral = (tokens: Array<[string, TokenType]>) => tokens.length === 2
