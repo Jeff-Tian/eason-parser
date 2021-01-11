@@ -1,3 +1,5 @@
+import * as util from "util"
+
 export enum TokenType {
     LeftParen,
     RightParen,
@@ -41,9 +43,17 @@ export const readToEnd = (input: string, i: number, tokenType: TokenType) => {
     return token
 }
 
+const Functions = new Map<string, Function>([
+    ['+', (...args: number[]) => args.map(arg => Number(arg)).reduce((prev, next) => prev + next, 0)]
+])
+
+const onlyALiteral = (tokens: Array<[string, TokenType]>) => tokens.length === 2
+
+const extractLiteral = (tokens: Array<[string, TokenType]>) => Number(tokens[0][0])
+
 export class SchemeParser {
     tokenize(input: string) {
-        const res = []
+        const res: Array<[string, TokenType]> = []
 
         let lastChar = undefined
         for (let i = 0; i < input.length; i++) {
@@ -81,5 +91,22 @@ export class SchemeParser {
         res.push(["", TokenType.EOF])
 
         return res
+    }
+
+    parse(input: string) {
+        const tokens = this.tokenize(input)
+
+        if (onlyALiteral(tokens)) {
+            return extractLiteral(tokens)
+        }
+
+        const fn = Functions.get(tokens[1][0])
+        const args = tokens.filter(token => token[1] === TokenType.ARG).map(token => token[0])
+
+        if (!fn) {
+            throw new Error(`Function for ${tokens[1][0]} not found! Context: ${util.inspect(tokens)}, input: ${input}`)
+        }
+
+        return fn.apply(null, args)
     }
 }

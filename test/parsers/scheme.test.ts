@@ -45,20 +45,52 @@ describe("scheme parser", () => {
             })
         })
 
-        it("tokenize", () => {
-            const schemeParser = new SchemeParser()
+        describe("tokenize", () => {
+            it("tokenize", () => {
+                const schemeParser = new SchemeParser()
 
-            const res = schemeParser.tokenize("(A 1 10)")
-            expect(res).toStrictEqual([
-                ["(", TokenType.LeftParen],
-                ["A", TokenType.FunctionName],
-                [" ", TokenType.Space],
-                ["1", TokenType.ARG],
-                [" ", TokenType.Space],
-                ["10", TokenType.ARG],
-                [")", TokenType.RightParen],
-                ["", TokenType.EOF]
-            ])
+                const res = schemeParser.tokenize("(A 1 10)")
+                expect(res).toStrictEqual([
+                    ["(", TokenType.LeftParen],
+                    ["A", TokenType.FunctionName],
+                    [" ", TokenType.Space],
+                    ["1", TokenType.ARG],
+                    [" ", TokenType.Space],
+                    ["10", TokenType.ARG],
+                    [")", TokenType.RightParen],
+                    ["", TokenType.EOF]
+                ])
+            })
+
+            it("adds", () => {
+                const p = new SchemeParser()
+
+                const res = p.tokenize("(+ 1 1)")
+                expect(res).toStrictEqual([
+                    ["(", TokenType.LeftParen],
+                    ["+", TokenType.FunctionName],
+                    [" ", TokenType.Space],
+                    ["1", TokenType.ARG],
+                    [" ", TokenType.Space],
+                    ["1", TokenType.ARG],
+                    [")", TokenType.RightParen],
+                    ["", TokenType.EOF]
+                ])
+            })
+        })
+
+        describe("parses", () => {
+            it("parses 1", () => {
+                const p = new SchemeParser()
+                const res = p.parse("1")
+                expect(res).toEqual(1)
+            })
+
+            it("parses (+ 1 1)", () => {
+                const p = new SchemeParser()
+                const res = p.parse("(+ 1 1)")
+                expect(res).toEqual(2)
+            })
         })
     })
 })
