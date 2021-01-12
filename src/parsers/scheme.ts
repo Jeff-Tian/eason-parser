@@ -96,20 +96,90 @@ export class SchemeParser {
         return res
     }
 
-    parse(input: string) {
+    buildSyntaxTree(input: string) {
         const tokens = this.tokenize(input)
 
         if (onlyALiteral(tokens)) {
-            return extractLiteral(tokens)
+            return new SyntaxNode(SyntaxNodeType.Literal, extractLiteral(tokens))
         }
 
-        const fn = Functions.get(tokens[1][0])
-        const args = tokens.filter(token => token[1] === TokenType.ARG).map(token => token[0])
+        const level = []
+        let root = undefined
+        let newNode = undefined
 
-        if (!fn) {
-            throw new Error(`Function for ${tokens[1][0]} not found! Context: ${util.inspect(tokens)}, input: ${input}`)
+        for (let i = 0; i < tokens.length; i++) {
+            const currentToken = tokens[i]
+
+            switch (currentToken[1]) {
+                case TokenType.LeftParen:
+                    newNode = new SyntaxNode(SyntaxNodeType.Expression)
+                    level.push(newNode)
+                    break
+                case TokenType.FunctionName:
+                    const node1 = new SyntaxNode(SyntaxNodeType.Operator, currentToken[0])
+                    newNode!.addChildren(node1)
+                    break
+                case TokenType.ARG:
+                    const node2 = new SyntaxNode(SyntaxNodeType.Literal, currentToken[0])
+                    newNode!.addChildren(node2)
+                    break
+                case TokenType.Space:
+                    break
+                case TokenType.RightParen:
+                    const current = level.pop()
+                    if (level.length > 0) {
+                        level[level.length - 1].addChildren(current!)
+                    } else {
+                        root = current
+                    }
+                    break
+                default:
+                    break
+            }
         }
 
-        return fn.apply(null, args)
+        return root
+    }
+
+    parse(input: string) {
+        const st = this.buildSyntaxTree(input)
+        return st!.eval()
+    }
+}
+
+export enum SyntaxNodeType {
+    Literal,
+    Operator,
+    Expression
+}
+
+export class SyntaxNode {
+    type: SyntaxNodeType
+    children: SyntaxNode[] = []
+    value: number | string | undefined
+
+    constructor(type: SyntaxNodeType, value?: number | string) {
+        this.type = type
+        this.value = value
+    }
+
+    addChildren(node: SyntaxNode) {
+        this.children.push(node)
+    }
+
+    toString() {
+        return util.inspect(this)
+    }
+
+    eval(): number | Function | undefined {
+        if (this.type === SyntaxNodeType.Literal) {
+            return Number(this.value)
+        }
+
+        if (this.type === SyntaxNodeType.Operator) {
+            return Functions.get(this.value as string)
+        }
+
+        return (this.children[0].eval()! as Function).apply(null, this.children.slice(1).map(c => c.eval()))
     }
 }

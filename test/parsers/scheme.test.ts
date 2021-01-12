@@ -1,4 +1,4 @@
-import {getTokenType, readToEnd, SchemeParser, TokenType} from "../../src/parsers/scheme"
+import {getTokenType, readToEnd, SchemeParser, SyntaxNode, SyntaxNodeType, TokenType} from "../../src/parsers/scheme"
 
 describe("scheme parser", () => {
     describe("tokenize", () => {
@@ -96,6 +96,71 @@ describe("scheme parser", () => {
                 const p = new SchemeParser()
                 const res = p.parse("(- 1 1)")
                 expect(res).toEqual(0)
+            })
+
+            it("parses (+ 1 (- 1 1))", () => {
+                const p = new SchemeParser()
+                const res = p.parse("(+ 1 (- 1 1))")
+                expect(res).toEqual(1)
+            })
+        })
+
+        describe("syntax tree", () => {
+            it("builds syntax tree for single literal", () => {
+                const p = new SchemeParser()
+                const res = p.buildSyntaxTree("1")
+                expect(res).toBeDefined()
+                expect(res!.type).toEqual(SyntaxNodeType.Literal)
+                expect(res!.value).toEqual(1)
+            })
+
+            it("builds tree for (+ 1 1)", () => {
+                const p = new SchemeParser()
+                const res = p.buildSyntaxTree("(+ 1 1)")
+                expect(res!.type).toEqual(SyntaxNodeType.Expression)
+                expect(res!.children.length).toEqual(3)
+                expect(res!.toString()).toEqual(`SyntaxNode {
+  children:
+   [ SyntaxNode { children: [], type: 1, value: '+' },
+     SyntaxNode { children: [], type: 0, value: '1' },
+     SyntaxNode { children: [], type: 0, value: '1' } ],
+  type: 2,
+  value: undefined }`)
+            })
+
+            it("builds tree for (+ 1 (- 1 1))", () => {
+                const p = new SchemeParser()
+                const res = p.buildSyntaxTree("(+ 1 (- 1 1))")
+                expect(res).toBeDefined()
+                expect(res!.type).toEqual(SyntaxNodeType.Expression)
+                expect(res!.toString()).toEqual(`SyntaxNode {
+  children:
+   [ SyntaxNode { children: [], type: 1, value: '+' },
+     SyntaxNode { children: [], type: 0, value: '1' },
+     SyntaxNode { children: [Array], type: 2, value: undefined } ],
+  type: 2,
+  value: undefined }`)
+                expect(res!.children.length).toEqual(3)
+
+                expect(res!.children[2].type).toEqual(SyntaxNodeType.Expression)
+                expect(res!.children[2].children.length).toEqual(3)
+            })
+        })
+
+        describe("eval", () => {
+            it("evals 1", () => {
+                const n = new SyntaxNode(SyntaxNodeType.Literal, 1)
+                expect(n.eval()).toEqual(1)
+            })
+
+            it('evals (+ 1 1)', () => {
+                const n = new SchemeParser().buildSyntaxTree("(+ 1 1)")
+                expect(n!.eval()).toEqual(2)
+            })
+
+            it("evals (+ 1 (- 1 1))", () => {
+                const n = new SchemeParser().buildSyntaxTree("(+ 1 (- 1 1))")
+                expect(n!.eval()).toEqual(1)
             })
         })
     })
