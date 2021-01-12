@@ -192,5 +192,12 @@ describe("scheme parser", () => {
 1`)
             })
         })
+
+        describe("define", () => {
+            it("defines A as +", () => {
+                const n = new SchemeParser().parse("(define (A x y) (+ x y))")
+                expect(n).toEqual("")
+            })
+        })
     })
 })
