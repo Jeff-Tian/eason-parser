@@ -173,11 +173,23 @@ describe("scheme parser", () => {
         })
 
         describe("explain", () => {
-            it.skip("explains", () => {
+            it("explains level 1", () => {
+                const n = new SchemeParser().buildSyntaxTree("(+ 1 1)")
+                expect(n!.height).toEqual(1)
+                expect(n!.depth).toEqual(0)
+                expect(n!.explain(1)).toEqual("2")
+            })
+
+            it("explains level 2", () => {
                 const n = new SchemeParser().buildSyntaxTree("(+ 1 (- 1 1))")
-                expect(n!.explain()).toEqual(`(+ 1 (- 1 1))
+                expect(n!.explain(2)).toEqual("(+ 1 0)")
+            })
+
+            it("explains", () => {
+                const n = new SchemeParser().buildSyntaxTree("(+ 1 (- 1 1))")
+                expect(n!.explainStepByStep().join("\n")).toEqual(`(+ 1 (- 1 1))
 (+ 1 0)
-`)
+1`)
             })
         })
     })

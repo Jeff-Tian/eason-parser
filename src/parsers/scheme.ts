@@ -193,7 +193,27 @@ export class SyntaxNode {
         return (this.children[0].eval()! as Function).apply(null, this.children.slice(1).map(c => c.eval()))
     }
 
-    explain(): string {
-        return ""
+    explain(level: number): string {
+        if (this.type === SyntaxNodeType.Literal) {
+            return String(this.value)
+        }
+
+        if (this.type === SyntaxNodeType.Operator) {
+            return this.value as string
+        }
+
+        if (level === this.depth + 1) {
+            return String(this.eval())
+        }
+
+        return "(" + this.children.map(c => c.explain(level)).join(" ") + ")"
+    }
+
+    explainStepByStep(): string[] {
+        const res = [this.explain(Infinity)]
+        for (let i = this.height; i >= 1; i--) {
+            res.push(this.explain(i))
+        }
+        return res
     }
 }
