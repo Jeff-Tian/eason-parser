@@ -100,27 +100,31 @@ export class SchemeParser {
         const tokens = this.tokenize(input)
 
         if (onlyALiteral(tokens)) {
-            return new SyntaxNode(SyntaxNodeType.Literal, extractLiteral(tokens))
+            return new SyntaxNode(1, SyntaxNodeType.Literal, extractLiteral(tokens))
         }
 
         const level = []
         let root = undefined
         let newNode = undefined
+        let height = 0
 
         for (let i = 0; i < tokens.length; i++) {
             const currentToken = tokens[i]
 
             switch (currentToken[1]) {
                 case TokenType.LeftParen:
-                    newNode = new SyntaxNode(SyntaxNodeType.Expression)
+                    newNode = new SyntaxNode(level.length, SyntaxNodeType.Expression)
                     level.push(newNode)
+                    if (level.length > height) {
+                        height = level.length
+                    }
                     break
                 case TokenType.FunctionName:
-                    const node1 = new SyntaxNode(SyntaxNodeType.Operator, currentToken[0])
+                    const node1 = new SyntaxNode(level.length, SyntaxNodeType.Operator, currentToken[0])
                     newNode!.addChildren(node1)
                     break
                 case TokenType.ARG:
-                    const node2 = new SyntaxNode(SyntaxNodeType.Literal, currentToken[0])
+                    const node2 = new SyntaxNode(level.length, SyntaxNodeType.Literal, currentToken[0])
                     newNode!.addChildren(node2)
                     break
                 case TokenType.Space:
@@ -138,6 +142,7 @@ export class SchemeParser {
             }
         }
 
+        root!.height = height
         return root
     }
 
@@ -157,10 +162,15 @@ export class SyntaxNode {
     type: SyntaxNodeType
     children: SyntaxNode[] = []
     value: number | string | undefined
+    depth: number
 
-    constructor(type: SyntaxNodeType, value?: number | string) {
+    height: number
+
+    constructor(depth: number, type: SyntaxNodeType, value?: number | string) {
         this.type = type
         this.value = value
+        this.depth = depth
+        this.height = 1
     }
 
     addChildren(node: SyntaxNode) {
@@ -181,5 +191,9 @@ export class SyntaxNode {
         }
 
         return (this.children[0].eval()! as Function).apply(null, this.children.slice(1).map(c => c.eval()))
+    }
+
+    explain(): string {
+        return ""
     }
 }

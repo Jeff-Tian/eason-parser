@@ -119,13 +119,6 @@ describe("scheme parser", () => {
                 const res = p.buildSyntaxTree("(+ 1 1)")
                 expect(res!.type).toEqual(SyntaxNodeType.Expression)
                 expect(res!.children.length).toEqual(3)
-                expect(res!.toString()).toEqual(`SyntaxNode {
-  children:
-   [ SyntaxNode { children: [], type: 1, value: '+' },
-     SyntaxNode { children: [], type: 0, value: '1' },
-     SyntaxNode { children: [], type: 0, value: '1' } ],
-  type: 2,
-  value: undefined }`)
             })
 
             it("builds tree for (+ 1 (- 1 1))", () => {
@@ -133,13 +126,6 @@ describe("scheme parser", () => {
                 const res = p.buildSyntaxTree("(+ 1 (- 1 1))")
                 expect(res).toBeDefined()
                 expect(res!.type).toEqual(SyntaxNodeType.Expression)
-                expect(res!.toString()).toEqual(`SyntaxNode {
-  children:
-   [ SyntaxNode { children: [], type: 1, value: '+' },
-     SyntaxNode { children: [], type: 0, value: '1' },
-     SyntaxNode { children: [Array], type: 2, value: undefined } ],
-  type: 2,
-  value: undefined }`)
                 expect(res!.children.length).toEqual(3)
 
                 expect(res!.children[2].type).toEqual(SyntaxNodeType.Expression)
@@ -149,7 +135,7 @@ describe("scheme parser", () => {
 
         describe("eval", () => {
             it("evals 1", () => {
-                const n = new SyntaxNode(SyntaxNodeType.Literal, 1)
+                const n = new SyntaxNode(1, SyntaxNodeType.Literal, 1)
                 expect(n.eval()).toEqual(1)
             })
 
@@ -161,6 +147,37 @@ describe("scheme parser", () => {
             it("evals (+ 1 (- 1 1))", () => {
                 const n = new SchemeParser().buildSyntaxTree("(+ 1 (- 1 1))")
                 expect(n!.eval()).toEqual(1)
+            })
+        })
+
+        describe("height", () => {
+            it("1", () => {
+                const n = new SchemeParser().buildSyntaxTree("1")
+                expect(n!.height).toEqual(1)
+            })
+
+            it("1 for expression", () => {
+                const n = new SchemeParser().buildSyntaxTree("(+ 1 1)")
+                expect(n!.height).toEqual(1)
+            })
+
+            it("2 for expression", () => {
+                const n = new SchemeParser().buildSyntaxTree("(+ 1 (- 1 1))")
+                expect(n!.height).toEqual(2)
+            })
+
+            it("2 for expressions", () => {
+                const n = new SchemeParser().buildSyntaxTree("(+ (- 1 1) (- 1 1))")
+                expect(n!.height).toEqual(2)
+            })
+        })
+
+        describe("explain", () => {
+            it.skip("explains", () => {
+                const n = new SchemeParser().buildSyntaxTree("(+ 1 (- 1 1))")
+                expect(n!.explain()).toEqual(`(+ 1 (- 1 1))
+(+ 1 0)
+`)
             })
         })
     })
