@@ -194,9 +194,35 @@ describe("scheme parser", () => {
         })
 
         describe("define", () => {
+            it("reads function to end", () => {
+                const res = readToEnd("(define (A x y) (+ x y))", 1, TokenType.FunctionName, "(")
+                expect(res).toBe("define")
+            })
+
             it("defines A as +", () => {
-                const n = new SchemeParser().parse("(define (A x y) (+ x y))")
-                expect(n).toEqual("")
+                const n = new SchemeParser().tokenize("(define (A x y) (+ x y))")
+                expect(n).toStrictEqual([
+                    ["(", TokenType.LeftParen],
+                    ["define", TokenType.FunctionName],
+                    [" ", TokenType.Space],
+                    ["(", TokenType.LeftParen],
+                    ["A", TokenType.FunctionName],
+                    [" ", TokenType.Space],
+                    ["x", TokenType.ARG],
+                    [" ", TokenType.Space],
+                    ["y", TokenType.ARG],
+                    [")", TokenType.RightParen],
+                    [" ", TokenType.Space],
+                    ["(", TokenType.LeftParen],
+                    ["+", TokenType.FunctionName],
+                    [" ", TokenType.Space],
+                    ["x", TokenType.ARG],
+                    [" ", TokenType.Space],
+                    ["y", TokenType.ARG],
+                    [")", TokenType.RightParen],
+                    [")", TokenType.RightParen],
+                    ["", TokenType.EOF]
+                ])
             })
         })
     })

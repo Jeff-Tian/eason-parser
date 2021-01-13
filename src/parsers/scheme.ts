@@ -33,9 +33,9 @@ export const getTokenType = (char: string, lastChar?: string) => {
     return TokenType.ARG
 }
 
-export const readToEnd = (input: string, i: number, tokenType: TokenType) => {
+export const readToEnd = (input: string, i: number, tokenType: TokenType, lastChar?: string) => {
     let token = ""
-    while (getTokenType(input[i]) === tokenType) {
+    while (getTokenType(input[i], lastChar) === tokenType) {
         token += input[i]
         i++
     }
@@ -47,7 +47,9 @@ const add = (...args: number[]) => args.map(arg => Number(arg)).reduce((prev, ne
 
 const Functions = new Map<string, Function>([
     ['+', add],
-    ['-', (...args: number[]) => add(...args.map((arg, index) => index === 0 ? arg : -arg))]
+    ['-', (...args: number[]) => add(...args.map((arg, index) => index === 0 ? arg : -arg))],
+    ['define', () => {
+    }]
 ])
 
 const onlyALiteral = (tokens: Array<[string, TokenType]>) => tokens.length === 2
@@ -83,7 +85,9 @@ export class SchemeParser {
                     res.push([char, tokenType])
                     break
                 case TokenType.FunctionName:
-                    res.push([char, tokenType])
+                    const fn = readToEnd(input, i, TokenType.FunctionName, "(")
+                    res.push([fn, tokenType])
+                    i += fn.length - 1
                     break
                 default:
                     throw new Error(`Unexpected token: ${char}`)
@@ -92,7 +96,6 @@ export class SchemeParser {
         }
 
         res.push(["", TokenType.EOF])
-
         return res
     }
 
