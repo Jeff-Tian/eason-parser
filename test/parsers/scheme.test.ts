@@ -241,6 +241,14 @@ describe("scheme parser", () => {
                 expect(res!.define()).toEqual(undefined)
                 expect(Functions.get("A")).toBeDefined()
             })
+
+            it("run defined functions", () => {
+                const res = new SchemeParser().parse("(define (A x y) (+ x y))")
+                expect(res).toBeUndefined()
+
+                const sum = new SchemeParser().parse("(A 1 1)")
+                expect(sum).toEqual(2)
+            })
         })
     })
 })

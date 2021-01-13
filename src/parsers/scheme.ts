@@ -221,10 +221,20 @@ export class SyntaxNode {
     }
 
     define() {
+        if (this.type !== SyntaxNodeType.Expression) {
+            return undefined
+        }
+
+        if (this.children[0].value !== 'define') {
+            return undefined
+        }
+
         const toBeDefined = this.children[1]
         const implementation = this.children[2]
 
         const fn = toBeDefined.children[0]
         Functions.set(fn.value as string, Functions.get(implementation.children[0].value as string)!)
+
+        return undefined
     }
 }
