@@ -1,4 +1,12 @@
-import {getTokenType, readToEnd, SchemeParser, SyntaxNode, SyntaxNodeType, TokenType} from "../../src/parsers/scheme"
+import {
+    Functions,
+    getTokenType,
+    readToEnd,
+    SchemeParser,
+    SyntaxNode,
+    SyntaxNodeType,
+    TokenType
+} from "../../src/parsers/scheme"
 
 describe("scheme parser", () => {
     describe("tokenize", () => {
@@ -223,6 +231,15 @@ describe("scheme parser", () => {
                     [")", TokenType.RightParen],
                     ["", TokenType.EOF]
                 ])
+            })
+
+            it("parse define", () => {
+                const res = new SchemeParser().buildSyntaxTree("(define (A x y) (+ x y))")
+                expect(res!.children.length).toEqual(3)
+                expect(res!.children[0].type).toEqual(SyntaxNodeType.Operator)
+                expect(Functions.get("A")).toBeUndefined()
+                expect(res!.define()).toEqual(undefined)
+                expect(Functions.get("A")).toBeDefined()
             })
         })
     })

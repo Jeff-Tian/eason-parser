@@ -45,7 +45,7 @@ export const readToEnd = (input: string, i: number, tokenType: TokenType, lastCh
 
 const add = (...args: number[]) => args.map(arg => Number(arg)).reduce((prev, next) => prev + next, 0)
 
-const Functions = new Map<string, Function>([
+export const Functions = new Map<string, Function>([
     ['+', add],
     ['-', (...args: number[]) => add(...args.map((arg, index) => index === 0 ? arg : -arg))],
     ['define', () => {
@@ -218,5 +218,13 @@ export class SyntaxNode {
             res.push(this.explain(i))
         }
         return res
+    }
+
+    define() {
+        const toBeDefined = this.children[1]
+        const implementation = this.children[2]
+
+        const fn = toBeDefined.children[0]
+        Functions.set(fn.value as string, Functions.get(implementation.children[0].value as string)!)
     }
 }
