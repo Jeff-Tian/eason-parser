@@ -45,16 +45,34 @@ export const readToEnd = (input: string, i: number, tokenType: TokenType, lastCh
 
 const add = (...args: number[]) => args.map(arg => Number(arg)).reduce((prev, next) => prev + next, 0)
 
-export const Functions = new Map<string, Function>([
+export const Functions = new Map<string, Function | number>([
     ['+', add],
     ['-', (...args: number[]) => add(...args.map((arg, index) => index === 0 ? arg : -arg))],
+    ['=', (x: number, y: number) => x === y],
+    // ['cond', (...args: SyntaxNode[]) => {
+    //     console.log("cond for ", args)
+    //     for (let i = 0; i < args.length; i++) {
+    //         const arg = args[i]
+    //
+    //         if (!arg.children) {
+    //             throw new Error(`Unexpected arg: ${util.inspect(arg)} in ${i}`)
+    //         }
+    //
+    //         if (arg.children[0].eval()) {
+    //             return arg.children[1].eval()
+    //         }
+    //     }
+    //
+    //     throw new Error("Not all paths return a value for `cond`")
+    // }],
+    ['else', (_x: number) => true],
     ['define', () => {
     }]
 ])
 
 const onlyALiteral = (tokens: Array<[string, TokenType]>) => tokens.length === 2
 
-const extractLiteral = (tokens: Array<[string, TokenType]>) => Number(tokens[0][0])
+export const extractLiteral = (tokens: Array<[string, TokenType]>) => Number(tokens[0][0]) || tokens[0][0]
 
 export class SchemeParser {
     tokenize(input: string) {
@@ -186,11 +204,15 @@ export class SyntaxNode {
 
     eval(): number | Function | undefined {
         if (this.type === SyntaxNodeType.Literal) {
-            return Number(this.value)
+            return Number(Functions.get(this.value as string) ?? this.value)
         }
 
         if (this.type === SyntaxNodeType.Operator) {
             return Functions.get(this.value as string)
+        }
+
+        if (!this.children[0].eval()) {
+            throw new Error(`Function not found! ${this.children[0].value}, ${SyntaxNodeType[this.type]}`)
         }
 
         return (this.children[0].eval()! as Function).apply(null, this.children.slice(1).map(c => c.eval()))
@@ -232,7 +254,19 @@ export class SyntaxNode {
         const toBeDefined = this.children[1]
         const implementation = this.children[2]
 
+        if (toBeDefined.type === SyntaxNodeType.Literal && implementation.type === SyntaxNodeType.Literal) {
+            Functions.set(toBeDefined.value as string, implementation.value as number)
+            return undefined
+        }
+
         const fn = toBeDefined.children[0]
+
+        if (implementation.children[0].value === "cond") {
+            Functions.set(fn.value as string, () => 1)
+
+            return undefined
+        }
+
         Functions.set(fn.value as string, Functions.get(implementation.children[0].value as string)!)
 
         return undefined

@@ -1,4 +1,5 @@
 import {
+    extractLiteral,
     Functions,
     getTokenType,
     readToEnd,
@@ -84,6 +85,18 @@ describe("scheme parser", () => {
                     [")", TokenType.RightParen],
                     ["", TokenType.EOF]
                 ])
+            })
+
+            it("tokenize", () => {
+                const p = new SchemeParser()
+
+                const res = p.tokenize("x")
+                expect(res).toStrictEqual([
+                    ["x", TokenType.ARG],
+                    ["", TokenType.EOF]
+                ])
+
+                expect(extractLiteral(res)).toEqual("x")
             })
         })
 
@@ -233,6 +246,38 @@ describe("scheme parser", () => {
                 ])
             })
 
+            it("defines x as 1", () => {
+                const expression = "(define x 1)"
+
+                const n = new SchemeParser().tokenize(expression)
+                expect(n).toStrictEqual([
+                    ["(", TokenType.LeftParen],
+                    ["define", TokenType.FunctionName],
+                    [" ", TokenType.Space],
+                    ["x", TokenType.ARG],
+                    [" ", TokenType.Space],
+                    ["1", TokenType.ARG],
+                    [")", TokenType.RightParen],
+                    ["", TokenType.EOF]
+                ])
+
+                const tree = new SchemeParser().buildSyntaxTree(expression)
+
+                expect(tree!.children).toHaveLength(3)
+
+                tree!.define()
+
+                expect(Functions.get("x")).toEqual("1")
+
+                const node = new SchemeParser().buildSyntaxTree("x")
+                expect(node!.type).toEqual(SyntaxNodeType.Literal)
+                expect(node!.value).toEqual('x')
+                expect(node!.eval()).toEqual(1)
+
+                const res = new SchemeParser().parse("x")
+                expect(res).toEqual(1)
+            })
+
             it("parse define", () => {
                 const res = new SchemeParser().buildSyntaxTree("(define (A x y) (+ x y))")
                 expect(res!.children.length).toEqual(3)
@@ -250,5 +295,70 @@ describe("scheme parser", () => {
                 expect(sum).toEqual(2)
             })
         })
+
+        describe("=", () => {
+            it("equals", () => {
+                const res = new SchemeParser().parse("(= 1 1)")
+                expect(res).toEqual(true)
+            })
+
+            it("equals false", () => {
+                const res = new SchemeParser().parse("(= 1 0)")
+                expect(res).toEqual(false)
+            })
+        })
+
+        describe("cond", () => {
+            const expression = "(define (B x y) (cond ((= x 0) y) (else x)))"
+
+            it('tokenize', () => {
+                const res = new SchemeParser().tokenize(expression)
+                expect(res).toStrictEqual([
+                    ["(", TokenType.LeftParen],
+                    ["define", TokenType.FunctionName],
+                    [" ", TokenType.Space],
+                    ["(", TokenType.LeftParen],
+                    ["B", TokenType.FunctionName],
+                    [" ", TokenType.Space],
+                    ["x", TokenType.ARG],
+                    [" ", TokenType.Space],
+                    ["y", TokenType.ARG],
+                    [")", TokenType.RightParen],
+                    [" ", TokenType.Space],
+                    ["(", TokenType.LeftParen],
+                    ["cond", TokenType.FunctionName],
+                    [" ", TokenType.Space],
+                    ["(", TokenType.LeftParen],
+                    ["(", TokenType.LeftParen],
+                    ["=", TokenType.FunctionName],
+                    [" ", TokenType.Space],
+                    ["x", TokenType.ARG],
+                    [" ", TokenType.Space],
+                    ["0", TokenType.ARG],
+                    [")", TokenType.RightParen],
+                    [" ", TokenType.Space],
+                    ["y", TokenType.ARG],
+                    [")", TokenType.RightParen],
+                    [" ", TokenType.Space],
+                    ["(", TokenType.LeftParen],
+                    ["else", TokenType.FunctionName],
+                    [" ", TokenType.Space],
+                    ["x", TokenType.ARG],
+                    [")", TokenType.RightParen],
+                    [")", TokenType.RightParen],
+                    [")", TokenType.RightParen],
+                    ["", TokenType.EOF]
+                ])
+            })
+
+            it("else", () => {
+                const res = new SchemeParser().buildSyntaxTree(expression)
+                expect(res!.define()).toBeUndefined()
+
+                const elseRes = new SchemeParser().parse("(B 1 2)")
+                expect(elseRes).toEqual(1)
+            })
+        })
+
     })
 })
