@@ -128,25 +128,36 @@ export class SchemeParser {
         let root = undefined
         let newNode = undefined
         let height = 0
+        let functionExpected = false
 
         for (let i = 0; i < tokens.length; i++) {
             const currentToken = tokens[i]
 
             switch (currentToken[1]) {
-                case TokenType.LeftParen:
-                    newNode = new SyntaxNode(level.length, SyntaxNodeType.Expression)
-                    level.push(newNode)
-                    if (level.length > height) {
-                        height = level.length
+                case TokenType.LeftParen && !functionExpected:
+                    if (!functionExpected) {
+                        newNode = new SyntaxNode(level.length, SyntaxNodeType.Expression)
+                        level.push(newNode)
+                        if (level.length > height) {
+                            height = level.length
+                        }
+                        functionExpected = true
+                    } else {
+                        const node0: SyntaxNode = new SyntaxNode(level.length, SyntaxNodeType.Expression)
+                        level.push(node0)
+                        if (level.length > height) {
+                            height = level.length
+                        }
                     }
                     break
                 case TokenType.FunctionName:
                     const node1 = new SyntaxNode(level.length, SyntaxNodeType.Operator, currentToken[0])
-                    newNode!.addChildren(node1)
+                    level[level.length - 1].addChildren(node1)
+                    functionExpected = false
                     break
                 case TokenType.ARG:
                     const node2 = new SyntaxNode(level.length, SyntaxNodeType.Literal, currentToken[0])
-                    newNode!.addChildren(node2)
+                    level[level.length - 1].addChildren(node2)
                     break
                 case TokenType.Space:
                     break
@@ -157,6 +168,7 @@ export class SchemeParser {
                     } else {
                         root = current
                     }
+                    functionExpected = false
                     break
                 default:
                     break
@@ -262,7 +274,19 @@ export class SyntaxNode {
         const fn = toBeDefined.children[0]
 
         if (implementation.children[0].value === "cond") {
-            Functions.set(fn.value as string, () => 1)
+            Functions.set(fn.value as string, (_x: number, _y: number) => {
+                const conditions = implementation.children.slice(1)
+
+                for (let i = 0; i < conditions.length; i++) {
+                    const cond = conditions[i].children[0].eval()
+                    console.log(conditions[i].children[0].toString())
+
+                    if (Boolean(cond)) {
+                        return conditions[i].children[1].toString()
+                    }
+                }
+                throw new Error(`cond expression error!`)
+            })
 
             return undefined
         }
