@@ -402,5 +402,21 @@ describe("scheme parser", () => {
             })
         })
 
+        describe("handle new line", () => {
+            it("(C i j)", () => {
+                const define = `(define (C i j)
+  (cond ((= j 0) 0)
+        ((= i 0) (* 2 j))
+        ((= j 1) 2)
+        (else (C (- i 1)
+                 (C i (- j 1))))))`
+
+                const res = new SchemeParser().buildSyntaxTree(define)
+                expect(res!.define()).toBeUndefined()
+
+                const a11 = new SchemeParser().parse("(C 1 1)")
+                expect(a11).toEqual(2)
+            })
+        })
     })
 })

@@ -18,7 +18,7 @@ export const getTokenType = (char: string, lastChar?: string) => {
         return TokenType.RightParen
     }
 
-    if (char === ' ') {
+    if (char === ' ' || char === '\n') {
         return TokenType.Space
     }
 
