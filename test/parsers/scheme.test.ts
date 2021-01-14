@@ -380,19 +380,23 @@ describe("scheme parser", () => {
                 ])
             })
 
-            it.skip("else", () => {
+            it("else", () => {
                 const res = new SchemeParser().buildSyntaxTree(expression)
                 expect(res!.children).toHaveLength(3)
                 expect(res!.children[2].children).toHaveLength(3)
                 expect(res!.children[2].children[1].children).toHaveLength(2)
                 expect(res!.children[2].children[2].children).toHaveLength(2)
                 expect(res!.define()).toBeUndefined()
+                expect(Functions.has('a')).toBeTruthy()
+                expect(Functions.has('b')).toBeTruthy()
+                expect(Functions.get('a')).toBeUndefined()
+                expect(Functions.get('b')).toBeUndefined()
 
                 const elseRes = new SchemeParser().parse("(B 1 2)")
                 expect(elseRes).toEqual(1)
             })
 
-            it.skip("not else", () => {
+            it("not else", () => {
                 const res = new SchemeParser().parse("(B 0 2)")
                 expect(res).toEqual(2)
             })

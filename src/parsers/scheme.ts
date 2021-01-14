@@ -45,7 +45,7 @@ export const readToEnd = (input: string, i: number, tokenType: TokenType, lastCh
 
 const add = (...args: number[]) => args.map(arg => Number(arg)).reduce((prev, next) => prev + next, 0)
 
-export const Functions = new Map<string, Function | number>([
+export const Functions = new Map<string, Function | number | undefined>([
     ['+', add],
     ['-', (...args: number[]) => add(...args.map((arg, index) => index === 0 ? arg : -arg))],
     ['=', (x: number, y: number) => x === y],
@@ -273,20 +273,30 @@ export class SyntaxNode {
 
         const fn = toBeDefined.children[0]
 
+        const formalParameters = toBeDefined.children.slice(1)
+        formalParameters.forEach(arg => {
+            Functions.set(arg.value as string, undefined)
+        })
+
         if (implementation.children[0].value === "cond") {
-            Functions.set(fn.value as string, (_x: number, _y: number) => {
+            const cond = (...actualParameters: number[]) => {
+                formalParameters.forEach((arg, i) => {
+                    Functions.set(arg.value as string, actualParameters[i])
+                })
+
                 const conditions = implementation.children.slice(1)
 
                 for (let i = 0; i < conditions.length; i++) {
                     const cond = conditions[i].children[0].eval()
-                    console.log(conditions[i].children[0].toString())
 
                     if (Boolean(cond)) {
-                        return conditions[i].children[1].toString()
+                        return conditions[i].children[1].eval()
                     }
                 }
                 throw new Error(`cond expression error!`)
-            })
+            }
+
+            Functions.set(fn.value as string, cond)
 
             return undefined
         }
