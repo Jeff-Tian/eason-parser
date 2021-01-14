@@ -416,6 +416,8 @@ describe("scheme parser", () => {
 
                 const a11 = new SchemeParser().parse("(C 1 1)")
                 expect(a11).toEqual(2)
+
+                expect(new SchemeParser().parse("(C 1 10)")).toEqual(1024)
             })
         })
     })

@@ -44,10 +44,12 @@ export const readToEnd = (input: string, i: number, tokenType: TokenType, lastCh
 }
 
 const add = (...args: number[]) => args.map(arg => Number(arg)).reduce((prev, next) => prev + next, 0)
+const multiply = (...args: number[]) => args.map(arg => Number(arg)).reduce((prev, next) => prev * next, 1)
 
 export const Functions = new Map<string, Function | number | undefined>([
     ['+', add],
     ['-', (...args: number[]) => add(...args.map((arg, index) => index === 0 ? arg : -arg))],
+    ['*', multiply],
     ['=', (x: number, y: number) => x === y],
     // ['cond', (...args: SyntaxNode[]) => {
     //     console.log("cond for ", args)
