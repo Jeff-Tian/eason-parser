@@ -1,4 +1,5 @@
 import {
+    explains,
     extractLiteral,
     Functions,
     getTokenType,
@@ -241,6 +242,18 @@ describe("scheme parser", () => {
 (+ 1 0)
 1`)
             })
+
+            it("explains *", () => {
+                const n = new SchemeParser().buildSyntaxTree("(* 2 2)")
+                expect(n!.explain(1)).toEqual("4")
+            })
+
+            it("explains (* 2 k)", () => {
+                const d = new SchemeParser().buildSyntaxTree("(define k 2)")
+                d!.defineExplain()
+                const n = new SchemeParser().buildSyntaxTree("(* 2 k)")
+                expect(n!.explain(1)).toEqual("4")
+            })
         })
 
         describe("define", () => {
@@ -420,12 +433,36 @@ describe("scheme parser", () => {
                 expect(new SchemeParser().parse("(C 1 10)")).toEqual(1024)
             })
 
-            it("explains", () => {
-                const defineExplain = new SchemeParser().buildSyntaxTree(define)
-                defineExplain!.defineExplain()
+            it("(* 2 (C (- 1 1) (C 1 (- 7 1))))", () => {
+                const resDef = new SchemeParser().buildSyntaxTree(define)
+                expect(resDef!.define()).toBeUndefined()
 
-                const res = new SchemeParser().buildSyntaxTree("(C 1 10)")
-                expect(res!.explain(1)).toEqual("(C (- i 1) (C i (- j 1)))")
+                const res = new SchemeParser().buildSyntaxTree("(* 2 (C (- 1 1) (C 1 (- 7 1))))")
+                console.log(res!.toString())
+                expect(res!.eval()).toEqual(256)
+            })
+
+            describe("explains", () => {
+                it("explains * C", () => {
+                    const defineExplain = new SchemeParser().buildSyntaxTree(define)
+                    defineExplain!.defineExplain()
+
+                    // next case:  (C 2 (* 2 2))
+                    const res = new SchemeParser().buildSyntaxTree("(C (- 1 1) (C 1 (- 2 1)))")
+                    expect(res!.explain(1)).toEqual("(* 2 2)")
+                })
+
+                it.skip("explains", () => {
+                    const defineExplain = new SchemeParser().buildSyntaxTree(define)
+                    defineExplain!.defineExplain()
+
+                    const res = new SchemeParser().buildSyntaxTree("(C 1 10)")
+                    expect(res!.explain(1)).toEqual("(C (- 1 1) (C 1 (- 10 1)))")
+
+                    expect(explains(res!)).toStrictEqual([
+                        "(C (- 1 1) (C 1 (- 10 1)))"
+                    ])
+                })
             })
         })
     })

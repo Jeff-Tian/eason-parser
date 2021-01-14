@@ -43,8 +43,12 @@ export const readToEnd = (input: string, i: number, tokenType: TokenType, lastCh
     return token
 }
 
-const add = (...args: number[]) => args.map(arg => Number(arg)).reduce((prev, next) => prev + next, 0)
-const multiply = (...args: number[]) => args.map(arg => Number(arg)).reduce((prev, next) => prev * next, 1)
+const add = (...args: number[]) => args.map(arg => Number(arg)).reduce((prev, next) => {
+    return prev + next
+}, 0)
+const multiply = (...args: number[]) => args.map(arg => Number(arg)).reduce((prev, next) => {
+    return prev * next
+}, 1)
 
 export const Functions = new Map<string, Function | number | undefined>([
     ['+', add],
@@ -58,7 +62,14 @@ export const Functions = new Map<string, Function | number | undefined>([
 
 const onlyALiteral = (tokens: Array<[string, TokenType]>) => tokens.length === 2
 
-export const extractLiteral = (tokens: Array<[string, TokenType]>) => Number(tokens[0][0]) || tokens[0][0]
+export const extractLiteral = (tokens: Array<[string, TokenType]>) => {
+    const res = Number(tokens[0][0]) || tokens[0][0]
+
+    if (String(res) === "NaN") {
+        throw new Error(`extracing NaN ! ${res}`)
+    }
+    return res
+}
 
 export class SchemeParser {
     tokenize(input: string) {
@@ -177,6 +188,26 @@ export enum SyntaxNodeType {
     Expression
 }
 
+// const repeat = (c: string, n: number) => new Array(n).fill(c).join("")
+
+const explain = (node: SyntaxNode) => node.explain(1)
+export const explains = (node: SyntaxNode) => {
+    const res = []
+
+    for (let i = 0; i < 10; i++) {
+        let round = explain(node)
+        if (String(round) === "NaN") {
+            throw new Error(`explains error! ${node.children[2].toString()}`)
+        }
+
+        res.push(round)
+
+        node = new SchemeParser().buildSyntaxTree(round)!
+    }
+
+    return res
+}
+
 export class SyntaxNode {
     type: SyntaxNodeType
     children: SyntaxNode[] = []
@@ -218,7 +249,7 @@ export class SyntaxNode {
 
     explain(level: number): string {
         if (this.type === SyntaxNodeType.Literal) {
-            return String(this.value)
+            return String(Functions.get(this.value as string) ?? this.value)
         }
 
         if (this.type === SyntaxNodeType.Operator) {
@@ -325,12 +356,14 @@ export class SyntaxNode {
                 const conditions = implementation.children.slice(1)
 
                 for (let i = 0; i < conditions.length; i++) {
-                    console.log("condition test: ", util.inspect(conditions[i]))
                     const cond = conditions[i].children[0].eval()
 
                     if (Boolean(cond)) {
-                        console.log("explain as ", util.inspect(conditions[i].children[1]), ' for args: ', util.inspect(actualParameters))
-                        return conditions[i].children[1].explain(1)
+                        const res = conditions[i].children[1].explain(1)
+                        if (res === "NaN") {
+                            throw new Error(`NaN in cond!!!! ${conditions[i].children[1].toString()}`)
+                        }
+                        return res
                     }
                 }
                 throw new Error(`cond expression error!`)
