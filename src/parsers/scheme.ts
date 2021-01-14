@@ -51,22 +51,6 @@ export const Functions = new Map<string, Function | number | undefined>([
     ['-', (...args: number[]) => add(...args.map((arg, index) => index === 0 ? arg : -arg))],
     ['*', multiply],
     ['=', (x: number, y: number) => x === y],
-    // ['cond', (...args: SyntaxNode[]) => {
-    //     console.log("cond for ", args)
-    //     for (let i = 0; i < args.length; i++) {
-    //         const arg = args[i]
-    //
-    //         if (!arg.children) {
-    //             throw new Error(`Unexpected arg: ${util.inspect(arg)} in ${i}`)
-    //         }
-    //
-    //         if (arg.children[0].eval()) {
-    //             return arg.children[1].eval()
-    //         }
-    //     }
-    //
-    //     throw new Error("Not all paths return a value for `cond`")
-    // }],
     ['else', (_x: number) => true],
     ['define', () => {
     }]
@@ -293,6 +277,60 @@ export class SyntaxNode {
 
                     if (Boolean(cond)) {
                         return conditions[i].children[1].eval()
+                    }
+                }
+                throw new Error(`cond expression error!`)
+            }
+
+            Functions.set(fn.value as string, cond)
+
+            return undefined
+        }
+
+        Functions.set(fn.value as string, Functions.get(implementation.children[0].value as string)!)
+
+        return undefined
+    }
+
+    defineExplain() {
+        if (this.type !== SyntaxNodeType.Expression) {
+            return undefined
+        }
+
+        if (this.children[0].value !== 'define') {
+            return undefined
+        }
+
+        const toBeDefined = this.children[1]
+        const implementation = this.children[2]
+
+        if (toBeDefined.type === SyntaxNodeType.Literal && implementation.type === SyntaxNodeType.Literal) {
+            Functions.set(toBeDefined.value as string, implementation.value as number)
+            return undefined
+        }
+
+        const fn = toBeDefined.children[0]
+
+        const formalParameters = toBeDefined.children.slice(1)
+        formalParameters.forEach(arg => {
+            Functions.set(arg.value as string, undefined)
+        })
+
+        if (implementation.children[0].value === "cond") {
+            const cond = (...actualParameters: number[]) => {
+                formalParameters.forEach((arg, i) => {
+                    Functions.set(arg.value as string, actualParameters[i])
+                })
+
+                const conditions = implementation.children.slice(1)
+
+                for (let i = 0; i < conditions.length; i++) {
+                    console.log("condition test: ", util.inspect(conditions[i]))
+                    const cond = conditions[i].children[0].eval()
+
+                    if (Boolean(cond)) {
+                        console.log("explain as ", util.inspect(conditions[i].children[1]), ' for args: ', util.inspect(actualParameters))
+                        return conditions[i].children[1].explain(1)
                     }
                 }
                 throw new Error(`cond expression error!`)

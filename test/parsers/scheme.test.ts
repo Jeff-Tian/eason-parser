@@ -403,14 +403,14 @@ describe("scheme parser", () => {
         })
 
         describe("handle new line", () => {
-            it("(C i j)", () => {
-                const define = `(define (C i j)
+            const define = `(define (C i j)
   (cond ((= j 0) 0)
         ((= i 0) (* 2 j))
         ((= j 1) 2)
         (else (C (- i 1)
                  (C i (- j 1))))))`
 
+            it("(C i j)", () => {
                 const res = new SchemeParser().buildSyntaxTree(define)
                 expect(res!.define()).toBeUndefined()
 
@@ -418,6 +418,14 @@ describe("scheme parser", () => {
                 expect(a11).toEqual(2)
 
                 expect(new SchemeParser().parse("(C 1 10)")).toEqual(1024)
+            })
+
+            it("explains", () => {
+                const defineExplain = new SchemeParser().buildSyntaxTree(define)
+                defineExplain!.defineExplain()
+
+                const res = new SchemeParser().buildSyntaxTree("(C 1 10)")
+                expect(res!.explain(1)).toEqual("(C (- i 1) (C i (- j 1)))")
             })
         })
     })
