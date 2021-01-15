@@ -1,5 +1,3 @@
-import * as util from "util"
-
 export enum TokenType {
     LeftParen,
     RightParen,
@@ -59,6 +57,8 @@ export const Functions = new Map<string, Function | number | undefined>([
     ['define', () => {
     }]
 ])
+
+export const FunctionsForExplain = new Map<string, Function | number | undefined>([])
 
 const onlyALiteral = (tokens: Array<[string, TokenType]>) => tokens.length === 2
 
@@ -188,6 +188,34 @@ export enum SyntaxNodeType {
     Expression
 }
 
+export const stringify = (n: any) => {
+    if (n instanceof SyntaxNode) {
+        if (n.children.length <= 0) {
+            return n.value as string
+        }
+
+        return "(" + (n.children.map(c => {
+            if (c.type === SyntaxNodeType.Literal) {
+                let newVar = Functions.get(c.value as string) as unknown as SyntaxNode
+
+                if (!newVar) {
+                    return c.value
+                }
+
+                if (typeof newVar.value !== 'undefined' && typeof newVar.eval === 'function') {
+                    return newVar.value ?? newVar.eval()
+                }
+
+                return JSON.stringify(c)
+            }
+
+            return c.value
+        }).join(" ")) + ")"
+    }
+
+    return String(n)
+}
+
 // const repeat = (c: string, n: number) => new Array(n).fill(c).join("")
 
 const explain = (node: SyntaxNode) => node.explain(1)
@@ -227,8 +255,20 @@ export class SyntaxNode {
         this.children.push(node)
     }
 
+    simplify(): any {
+        if (this.type === SyntaxNodeType.Literal) {
+            return {value: this.value, depth: this.depth}
+        }
+
+        if (this.type === SyntaxNodeType.Operator) {
+            return {value: this.value, depth: this.depth}
+        }
+
+        return {depth: this.depth, children: this.children.map(c => c.simplify())}
+    }
+
     toString() {
-        return util.inspect(this)
+        return JSON.stringify(this.simplify(), undefined, "  ")
     }
 
     eval(): number | Function | undefined {
@@ -256,11 +296,23 @@ export class SyntaxNode {
             return this.value as string
         }
 
-        if (level === this.depth + 1) {
-            return String(this.eval())
+        if (level <= this.depth + 1) {
+            return stringify(this.eval())
         }
 
-        return "(" + this.children.map(c => c.explain(level)).join(" ") + ")"
+        return "(" + (this.children.map(c => {
+            if (c.type === SyntaxNodeType.Literal) {
+                return c.value
+            }
+
+            if (c.type === SyntaxNodeType.Operator) {
+                return c.value
+            }
+
+            let res = c.explain(level)
+
+            return res ?? "^"
+        }).join(" ") || "-") + ")"
     }
 
     explainStepByStep(): string[] {
@@ -336,7 +388,7 @@ export class SyntaxNode {
         const implementation = this.children[2]
 
         if (toBeDefined.type === SyntaxNodeType.Literal && implementation.type === SyntaxNodeType.Literal) {
-            Functions.set(toBeDefined.value as string, implementation.value as number)
+            FunctionsForExplain.set(toBeDefined.value as string, implementation.value as number)
             return undefined
         }
 
@@ -344,13 +396,13 @@ export class SyntaxNode {
 
         const formalParameters = toBeDefined.children.slice(1)
         formalParameters.forEach(arg => {
-            Functions.set(arg.value as string, undefined)
+            FunctionsForExplain.set(arg.value as string, undefined)
         })
 
         if (implementation.children[0].value === "cond") {
             const cond = (...actualParameters: number[]) => {
                 formalParameters.forEach((arg, i) => {
-                    Functions.set(arg.value as string, actualParameters[i])
+                    FunctionsForExplain.set(arg.value as string, actualParameters[i])
                 })
 
                 const conditions = implementation.children.slice(1)
@@ -359,22 +411,18 @@ export class SyntaxNode {
                     const cond = conditions[i].children[0].eval()
 
                     if (Boolean(cond)) {
-                        const res = conditions[i].children[1].explain(1)
-                        if (res === "NaN") {
-                            throw new Error(`NaN in cond!!!! ${conditions[i].children[1].toString()}`)
-                        }
-                        return res
+                        return conditions[i].children[1]
                     }
                 }
                 throw new Error(`cond expression error!`)
             }
 
-            Functions.set(fn.value as string, cond)
+            FunctionsForExplain.set(fn.value as string, cond)
 
             return undefined
         }
 
-        Functions.set(fn.value as string, Functions.get(implementation.children[0].value as string)!)
+        FunctionsForExplain.set(fn.value as string, FunctionsForExplain.get(implementation.children[0].value as string)!)
 
         return undefined
     }
