@@ -428,8 +428,28 @@ export class SyntaxNode {
     }
 
     expand(): any {
-        const fn = FunctionsForExplain.get(this.children[0].value as string) as Function
-        const res = fn.apply(null, this.children.slice(1).map(c => c.eval()))
+        if (this.children.slice(1).every(c => c.type === SyntaxNodeType.Literal)) {
+            const fn = FunctionsForExplain.get(this.children[0].value as string) as Function
+            if (fn) {
+                return fn.apply(null, this.children.slice(1).map(c => c.eval())).flatten()
+            } else {
+                return (Functions.get(this.children[0].value as string) as Function).apply(null, this.children.slice(1).map(c => c.eval()))
+            }
+        }
+
+
+        const res = this
+        res.children.slice(1).forEach((c, i) => {
+            if (c.type === SyntaxNodeType.Literal) {
+                return
+            }
+
+            if (!FunctionsForExplain.get(c.children[0].value as string)) {
+                res.children[i + 1] = new SyntaxNode(1, SyntaxNodeType.Literal, c.eval() as number)
+            } else {
+                res.children[i + 1] = new SchemeParser().buildSyntaxTree(c.expand())!
+            }
+        })
 
         return res.flatten()
     }

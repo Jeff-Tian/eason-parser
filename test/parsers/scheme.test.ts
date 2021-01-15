@@ -466,6 +466,14 @@ describe("scheme parser", () => {
                     expect(res!.explain(2)).toEqual("(C 2 4)")
                 })
 
+                it("expand (+ 1 1)", () => {
+                    expect(new SchemeParser().buildSyntaxTree("(+ 1 1)")!.expand()).toEqual(2)
+                })
+
+                it("expand (C 1 (- 10 1))", () => {
+                    expect(new SchemeParser().buildSyntaxTree("(C 1 (- 10 1))")!.expand()).toEqual("(C 1 9)")
+                })
+
                 it("expand", () => {
                     const defineExplain = new SchemeParser().buildSyntaxTree(define)
                     defineExplain!.define()
@@ -476,6 +484,11 @@ describe("scheme parser", () => {
 
                     expect(expanded).toStrictEqual("(C (- 1 1) (C 1 (- 10" +
                         " 1)))")
+
+                    console.log(FunctionsForExplain)
+                    const res2 = new SchemeParser().buildSyntaxTree(expanded)
+                    expanded = res2!.expand()
+                    expect(expanded).toStrictEqual("(C 0 (C 1 9))")
                 })
             })
         })
