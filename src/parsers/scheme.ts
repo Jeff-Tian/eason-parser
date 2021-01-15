@@ -426,4 +426,23 @@ export class SyntaxNode {
 
         return undefined
     }
+
+    expand(): any {
+        const fn = FunctionsForExplain.get(this.children[0].value as string) as Function
+        const res = fn.apply(null, this.children.slice(1).map(c => c.eval()))
+
+        return res.flatten()
+    }
+
+    flatten(): string {
+        if (this.type === SyntaxNodeType.Literal) {
+            return String(FunctionsForExplain.get(this.value as string) ?? this.value)
+        }
+
+        if (this.type === SyntaxNodeType.Operator) {
+            return String(this.value)
+        }
+
+        return ["(", this.children.map(c => c.flatten()).join(" "), ")"].join("")
+    }
 }

@@ -1,6 +1,6 @@
 import {
     extractLiteral,
-    Functions,
+    Functions, FunctionsForExplain,
     getTokenType,
     readToEnd,
     SchemeParser,
@@ -466,17 +466,16 @@ describe("scheme parser", () => {
                     expect(res!.explain(2)).toEqual("(C 2 4)")
                 })
 
-                it("explains", () => {
+                it("expand", () => {
                     const defineExplain = new SchemeParser().buildSyntaxTree(define)
                     defineExplain!.define()
                     defineExplain!.defineExplain()
 
-                     new SchemeParser().buildSyntaxTree("(C 1 10)")
-                    // expect(res!.explain(1)).toEqual("(C (- 1 1) (C 1 (- 10 1)))")
+                    const res = new SchemeParser().buildSyntaxTree("(C 1 10)")
+                    let expanded = res!.expand()
 
-                    // expect(explains(res!)).toStrictEqual([
-                    //     "(C (- 1 1) (C 1 (- 10 1)))"
-                    // ])
+                    expect(expanded).toStrictEqual("(C (- 1 1) (C 1 (- 10" +
+                        " 1)))")
                 })
             })
         })
