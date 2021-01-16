@@ -115,6 +115,8 @@ export class SchemeParser {
     }
 
     buildSyntaxTree(input: string) {
+        if (!input) return undefined
+
         const tokens = this.tokenize(input)
 
         if (onlyALiteral(tokens)) {
@@ -170,6 +172,10 @@ export class SchemeParser {
                 default:
                     break
             }
+        }
+
+        if (!root) {
+            throw new Error(`Unexpected Error for building syntax tree for ${input}, ${typeof input}`)
         }
 
         root!.height = height
@@ -402,6 +408,7 @@ export class SyntaxNode {
         if (implementation.children[0].value === "cond") {
             const cond = (...actualParameters: number[]) => {
                 formalParameters.forEach((arg, i) => {
+                    Functions.set(arg.value as string, actualParameters[i])
                     FunctionsForExplain.set(arg.value as string, actualParameters[i])
                 })
 
@@ -464,5 +471,21 @@ export class SyntaxNode {
         }
 
         return ["(", this.children.map(c => c.flatten()).join(" "), ")"].join("")
+    }
+
+    expandToEnd() {
+        const res = []
+        let current: SyntaxNode = this
+
+        let count = 1
+        while (current && current.type === SyntaxNodeType.Expression && count < 100) {
+            const expanded = current.expand()
+            res.push(expanded)
+
+            current = new SchemeParser().buildSyntaxTree(String(expanded))!
+            count++
+        }
+
+        return res
     }
 }

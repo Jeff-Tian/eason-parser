@@ -1,7 +1,6 @@
 import {
     extractLiteral,
-    Functions, FunctionsForExplain,
-    getTokenType,
+    Functions, getTokenType,
     readToEnd,
     SchemeParser,
     SyntaxNode,
@@ -181,10 +180,15 @@ describe("scheme parser", () => {
                 expect(res!.children[0].children).toHaveLength(3)
                 expect(res!.children[1].children).toHaveLength(0)
             })
+
+            it("handle empty", () => {
+                const res = new SchemeParser().buildSyntaxTree("")
+                expect(res).toBeUndefined()
+            })
         })
 
         describe("eval", () => {
-            it("evals 1", () => {
+            it("evaluates 1", () => {
                 const n = new SyntaxNode(1, SyntaxNodeType.Literal, 1)
                 expect(n.eval()).toEqual(1)
             })
@@ -485,10 +489,72 @@ describe("scheme parser", () => {
                     expect(expanded).toStrictEqual("(C (- 1 1) (C 1 (- 10" +
                         " 1)))")
 
-                    console.log(FunctionsForExplain)
                     const res2 = new SchemeParser().buildSyntaxTree(expanded)
                     expanded = res2!.expand()
                     expect(expanded).toStrictEqual("(C 0 (C 1 9))")
+
+                    const res3 = new SchemeParser().buildSyntaxTree(expanded)
+                    expanded = res3!.expand()
+                    expect(expanded).toStrictEqual("(C 0 (C (- 1 1) (C 1 (- 9 1))))")
+
+                    const res4 = new SchemeParser().buildSyntaxTree(expanded)
+                    expanded = res4!.expand()
+                    expect(expanded).toStrictEqual("(C 0 (C 0 (C 1 8)))")
+                })
+
+                it("expand (C 1 0) as 0", () => {
+                    const defineExplain = new SchemeParser().buildSyntaxTree(define)
+                    defineExplain!.define()
+                    defineExplain!.defineExplain()
+                    expect(new SchemeParser().buildSyntaxTree("(C 1 0)")!.expand()).toEqual("0")
+                })
+
+                it("expand to end", () => {
+                    const defineExplain = new SchemeParser().buildSyntaxTree(define)
+                    defineExplain!.define()
+                    defineExplain!.defineExplain()
+
+                    const res = new SchemeParser().buildSyntaxTree("(C 1 10)")
+                    let expanded = res!.expandToEnd()
+                    expect(expanded).toStrictEqual([
+                        "(C (- 1 1) (C 1 (- 10 1)))",
+                        "(C 0 (C 1 9))",
+                        "(C 0 (C (- 1 1) (C 1 (- 9 1))))",
+                        "(C 0 (C 0 (C 1 8)))",
+                        "(C 0 (C 0 (C (- 1 1) (C 1 (- 8 1)))))",
+                        "(C 0 (C 0 (C 0 (C 1 7))))",
+                        "(C 0 (C 0 (C 0 (C (- 1 1) (C 1 (- 7 1))))))",
+                        "(C 0 (C 0 (C 0 (C 0 (C 1 6)))))",
+                        "(C 0 (C 0 (C 0 (C 0 (C (- 1 1) (C 1 (- 6 1)))))))",
+                        "(C 0 (C 0 (C 0 (C 0 (C 0 (C 1 5))))))",
+                        "(C 0 (C 0 (C 0 (C 0 (C 0 (C (- 1 1) (C 1 (- 5 1))))))))",
+                        "(C 0 (C 0 (C 0 (C 0 (C 0 (C 0 (C 1 4)))))))",
+                        "(C 0 (C 0 (C 0 (C 0 (C 0 (C 0 (C (- 1 1) (C 1 (- 4 1)))))))))",
+                        "(C 0 (C 0 (C 0 (C 0 (C 0 (C 0 (C 0 (C 1 3))))))))",
+                        "(C 0 (C 0 (C 0 (C 0 (C 0 (C 0 (C 0 (C (- 1 1) (C 1 (- 3 1))))))))))",
+                        "(C 0 (C 0 (C 0 (C 0 (C 0 (C 0 (C 0 (C 0 (C 1 2)))))))))",
+                        "(C 0 (C 0 (C 0 (C 0 (C 0 (C 0 (C 0 (C 0 (C (- 1 1) (C 1 (- 2 1)))))))))))",
+                        "(C 0 (C 0 (C 0 (C 0 (C 0 (C 0 (C 0 (C 0 (C 0 (C 1 1))))))))))",
+                        "(C 0 (C 0 (C 0 (C 0 (C 0 (C 0 (C 0 (C 0 (C 0 2)))))))))",
+                        "(C 0 (C 0 (C 0 (C 0 (C 0 (C 0 (C 0 (C 0 (* 2 2)))))))))",
+                        "(C 0 (C 0 (C 0 (C 0 (C 0 (C 0 (C 0 (C 0 4))))))))",
+                        "(C 0 (C 0 (C 0 (C 0 (C 0 (C 0 (C 0 (* 2 4))))))))",
+                        "(C 0 (C 0 (C 0 (C 0 (C 0 (C 0 (C 0 8)))))))",
+                        "(C 0 (C 0 (C 0 (C 0 (C 0 (C 0 (* 2 8)))))))",
+                        "(C 0 (C 0 (C 0 (C 0 (C 0 (C 0 16))))))",
+                        "(C 0 (C 0 (C 0 (C 0 (C 0 (* 2 16))))))",
+                        "(C 0 (C 0 (C 0 (C 0 (C 0 32)))))",
+                        "(C 0 (C 0 (C 0 (C 0 (* 2 32)))))",
+                        "(C 0 (C 0 (C 0 (C 0 64))))",
+                        "(C 0 (C 0 (C 0 (* 2 64))))",
+                        "(C 0 (C 0 (C 0 128)))",
+                        "(C 0 (C 0 (* 2 128)))",
+                        "(C 0 (C 0 256))",
+                        "(C 0 (* 2 256))",
+                        "(C 0 512)",
+                        "(* 2 512)",
+                        1024,
+                    ])
                 })
             })
         })
