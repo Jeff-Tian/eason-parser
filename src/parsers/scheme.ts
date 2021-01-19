@@ -66,8 +66,11 @@ export const extractLiteral = (tokens: Array<[string, TokenType]>) => {
     const res = Number(tokens[0][0]) || tokens[0][0]
 
     if (String(res) === "NaN") {
-        throw new Error(`extracing NaN ! ${res}`)
+        console.error(`extracing NaN ! ${res}`)
+
+        return tokens[0][0]
     }
+
     return res
 }
 
@@ -435,12 +438,25 @@ export class SyntaxNode {
     }
 
     expand(): any {
+        const evals = (c: SyntaxNode) => {
+            const res = c.eval()
+
+            if (String(res) === "NaN") {
+                console.error(`Evaluation error for ${c.toString()}`)
+
+                return c.value
+            }
+
+            return res
+        }
+
         if (this.children.slice(1).every(c => c.type === SyntaxNodeType.Literal)) {
             const fn = FunctionsForExplain.get(this.children[0].value as string) as Function
             if (fn) {
-                return fn.apply(null, this.children.slice(1).map(c => c.eval())).flatten()
+                return fn.apply(null, this.children.slice(1).map(evals)).flatten()
             } else {
-                return (Functions.get(this.children[0].value as string) as Function).apply(null, this.children.slice(1).map(c => c.eval()))
+                const fn2 = Functions.get(this.children[0].value as string) as Function
+                return fn2.apply(null, this.children.slice(1).map(evals))
             }
         }
 
@@ -480,6 +496,12 @@ export class SyntaxNode {
         let count = 1
         while (current && current.type === SyntaxNodeType.Expression && count < 100) {
             const expanded = current.expand()
+            console.log("expanded = ", expanded)
+
+            if (String(expanded) === "NaN") {
+                return res
+            }
+
             res.push(expanded)
 
             current = new SchemeParser().buildSyntaxTree(String(expanded))!
