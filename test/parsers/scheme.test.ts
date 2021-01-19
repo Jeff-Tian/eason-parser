@@ -560,7 +560,7 @@ describe("scheme parser", () => {
         })
     })
 
-    describe("handles symbols", ()=>{
+    describe("handles symbols", () => {
         const define = `(define (C i j)
   (cond ((= j 0) 0)
         ((= i 0) (* 2 j))
@@ -568,7 +568,7 @@ describe("scheme parser", () => {
         (else (C (- i 1)
                  (C i (- j 1))))))`
 
-        it("expand (C 0 n)", ()=>{
+        it("expand (C 0 n)", () => {
             const defineExplain = new SchemeParser().buildSyntaxTree(define)
             defineExplain!.define()
             console.log("Functions = ", Functions)
@@ -578,6 +578,24 @@ describe("scheme parser", () => {
             let expanded = res!.expandToEnd()
             expect(expanded).toStrictEqual([
                 "(* 2 n)"
+            ])
+        })
+
+        it("expand (C 1 n) as ", () => {
+            const defineExplain = new SchemeParser().buildSyntaxTree(define)
+            defineExplain!.define()
+            console.log("Functions = ", Functions)
+            defineExplain!.defineExplain()
+
+            const res = new SchemeParser().buildSyntaxTree("(C 1 n)")
+            let expanded = res!.expand()
+            expect(expanded).toStrictEqual(
+                "(C (- 1 1) (C 1 (- n 1)))"
+            )
+
+            expanded = res!.expandToEnd()
+            expect(expanded).toStrictEqual([
+                "(C (- 1 1) (C 1 (- n 1)))",
             ])
         })
     })

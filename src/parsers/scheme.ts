@@ -498,7 +498,7 @@ export class SyntaxNode {
             const expanded = current.expand()
             console.log("expanded = ", expanded)
 
-            if (String(expanded) === "NaN") {
+            if (String(expanded).indexOf("NaN") >= 0) {
                 return res
             }
 
