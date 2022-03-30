@@ -650,4 +650,19 @@ describe('scheme parser', () => {
       ]);
     });
   });
+
+  describe('(car (cons x y))', () => {
+    it('expands (car (cons x y))', () => {
+      const cons = new SchemeParser().buildSyntaxTree(`(define (cons x y)
+  (lambda (m) (m x y)))`);
+      cons!.define();
+      const car = new SchemeParser().buildSyntaxTree(`(define (car z)
+  (z (lambda (p q) p)))`);
+      car!.define();
+
+      const res = new SchemeParser().buildSyntaxTree('(car (cons x y))');
+      const expanded = res!.expand();
+      expect(expanded).toStrictEqual('(car NaN)');
+    });
+  });
 });

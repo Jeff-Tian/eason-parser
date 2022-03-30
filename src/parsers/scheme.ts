@@ -77,6 +77,7 @@ export const Functions = new Map<string, Function | number | undefined>([
   ['=', (x: number, y: number) => x === y],
   ['else', (_x: number) => true],
   ['define', () => {}],
+  ['lambda', (m: Function) => m],
 ]);
 
 export const FunctionsForExplain = new Map<
