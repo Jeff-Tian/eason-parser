@@ -641,6 +641,13 @@ describe('scheme parser', () => {
       expect(expanded).toStrictEqual(
         '(remainder (square (expmod 2 (/ 10 2) 100)) 100)'
       );
+
+      const expendedToEnd = res!.expandToEnd();
+      expect(expendedToEnd).toStrictEqual([
+        '(remainder (square (expmod 2 (/ 10 2) 100)) 100)',
+        '(remainder 4 100)',
+        4,
+      ]);
     });
   });
 });

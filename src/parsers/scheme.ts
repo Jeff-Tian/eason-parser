@@ -59,6 +59,10 @@ const multiply = (...args: number[]) =>
       return prev * next;
     }, 1);
 
+const divide = (x: number, y: number) => x / y;
+
+const remainder = (x: number, y: number) => x % y;
+
 export const Functions = new Map<string, Function | number | undefined>([
   ['+', add],
   [
@@ -67,6 +71,8 @@ export const Functions = new Map<string, Function | number | undefined>([
       add(...args.map((arg, index) => (index === 0 ? arg : -arg))),
   ],
   ['*', multiply],
+  ['/', divide],
+  ['remainder', remainder],
   ['even?', (n: number) => n % 2 == 0],
   ['=', (x: number, y: number) => x === y],
   ['else', (_x: number) => true],

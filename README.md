@@ -12,6 +12,13 @@ In gitbook, you can explain a scheme execution by typing something like this:
 {% eason %}(A 1 10){% endeason %}
 ```
 
+## Development
+
+### lint fix
+
+```shell
+yarn lint -- --fix
+```
 
 
 # TSDX User Guide
