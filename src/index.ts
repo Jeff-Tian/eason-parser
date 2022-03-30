@@ -1,1 +1,1 @@
-export * from './parsers/scheme'
+export * from './parsers/scheme';

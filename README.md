@@ -1,3 +1,19 @@
+# eason-parser
+
+---
+
+> Parse and explain the execution of Scheme.
+
+## Usage
+
+In gitbook, you can explain a scheme execution by typing something like this:
+
+```shell
+{% eason %}(A 1 10){% endeason %}
+```
+
+
+
 # TSDX User Guide
 
 Congrats! You just saved yourself hours of work by bootstrapping this project with TSDX. Let’s get you oriented with what’s here and how to use it.
