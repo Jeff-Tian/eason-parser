@@ -534,7 +534,6 @@ export class SyntaxNode {
             return res;
         };
 
-        console.log('this.children = ', this.children);
         if (this.children.slice(1).every(c => c.type === SyntaxNodeType.Literal)) {
             const fn = FunctionsForExplain.get(
                 this.children[0].value as string
@@ -599,7 +598,6 @@ export class SyntaxNode {
             count < 100
             ) {
             const expanded = current.expand();
-            console.log('expanded = ', expanded);
 
             if (String(expanded).indexOf('NaN') >= 0) {
                 return res;
